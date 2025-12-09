@@ -7,15 +7,11 @@ import {
 } from "@/lib/actions/resume.actions";
 import { currentUser } from "@clerk/nextjs/server";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { id: string };
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: any): Promise<Metadata> {
   const data = await fetchResume(params.id);
   const resume = JSON.parse(data || "{}");
 
-  if (resume?.firstName === undefined && resume?.lastName === undefined) {
+  if (!resume?.firstName && !resume?.lastName) {
     return {
       title: "ResumeAI - Professional AI Resume Builder",
       description:
@@ -24,13 +20,13 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${resume?.firstName}${resume?.firstName && " "}
-    ${resume?.lastName}${resume?.lastName && " "}- ResumeAI`,
-    description: `${resume?.firstName} ${resume?.lastName}'s Resume. Powered by ResumeAI.`,
+    title: `${resume?.firstName || ""} ${resume?.lastName || ""}- ResumeAI`,
+    description: `${resume?.firstName || ""} ${resume?.lastName || ""}'s Resume. Powered by ResumeAI.`,
   };
 }
 
-const MyResume = async ({ params }: { params: { id: string } }) => {
+const MyResume = async (props: any) => {
+  const { params } = props;
   const user = await currentUser();
   const isResumeOwner = await checkResumeOwnership(user?.id || "", params.id);
 

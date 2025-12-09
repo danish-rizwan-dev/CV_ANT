@@ -64,139 +64,133 @@ const ResumeUploader = ({
     else return (bytes / 1048576).toFixed(1) + " MB";
   };
 
-  const parseResume = async (fileId: string, currentJobDescription?: string) => {
-    setIsParsing(true);
+ const parseResume = async (fileId: string, currentJobDescription?: string) => {
+  setIsParsing(true); // This should be true at the start, false at the end
 
-    try {
-      const parsedData = await parseResumeWithGemini(fileId, currentJobDescription);
+  if (!currentJobDescription || currentJobDescription.trim() === "") {
+    setIsParsing(false);
+    return;
+  }
 
-      if (parsedData) {
-        // Update the form with parsed data
+  try {
+    const parsedData = await parseResumeWithGemini(fileId, currentJobDescription);
+
+    if (parsedData) {
+      handleInputChange({
+        target: {
+          name: "firstName",
+          value: parsedData.firstName || "",
+        },
+      });
+
+      handleInputChange({
+        target: {
+          name: "lastName",
+          value: parsedData.lastName || "",
+        },
+      });
+
+      handleInputChange({
+        target: {
+          name: "jobTitle",
+          value: parsedData.jobTitle || "",
+        },
+      });
+
+      handleInputChange({
+        target: {
+          name: "address",
+          value: parsedData.address || "",
+        },
+      });
+
+      handleInputChange({
+        target: {
+          name: "phone",
+          value: parsedData.phone || "",
+        },
+      });
+
+      handleInputChange({
+        target: {
+          name: "email",
+          value: parsedData.email || "",
+        },
+      });
+
+      handleInputChange({
+        target: {
+          name: "summary",
+          value: parsedData.summary || "",
+        },
+      });
+
+      if (parsedData.skills && parsedData.skills.length > 0) {
         handleInputChange({
           target: {
-            name: "firstName",
-            value: parsedData.firstName || "",
+            name: "skills",
+            value: parsedData.skills,
           },
         });
-
-        handleInputChange({
-          target: {
-            name: "lastName",
-            value: parsedData.lastName || "",
-          },
-        });
-
-        handleInputChange({
-          target: {
-            name: "jobTitle",
-            value: parsedData.jobTitle || "",
-          },
-        });
-
-        handleInputChange({
-          target: {
-            name: "address",
-            value: parsedData.address || "",
-          },
-        });
-
-        handleInputChange({
-          target: {
-            name: "phone",
-            value: parsedData.phone || "",
-          },
-        });
-
-        handleInputChange({
-          target: {
-            name: "email",
-            value: parsedData.email || "",
-          },
-        });
-
-        handleInputChange({
-          target: {
-            name: "summary",
-            value: parsedData.summary || "",
-          },
-        });
-
-        // Handle skills, experience, education
-        if (parsedData.skills && parsedData.skills.length > 0) {
-          handleInputChange({
-            target: {
-              name: "skills",
-              value: parsedData.skills,
-            },
-          });
-
-          // Save skills to database
-          await addSkillToResume(resumeId, parsedData.skills);
-        }
-
-        if (parsedData.experience && parsedData.experience.length > 0) {
-          handleInputChange({
-            target: {
-              name: "experience",
-              value: parsedData.experience,
-            },
-          });
-
-          // Save experience to database
-          await addExperienceToResume(resumeId, parsedData.experience);
-        }
-
-        if (parsedData.education && parsedData.education.length > 0) {
-          handleInputChange({
-            target: {
-              name: "education",
-              value: parsedData.education,
-            },
-          });
-
-          // Save education to database
-          await addEducationToResume(resumeId, parsedData.education);
-        }
-
-        // Update basic info in the database
-        await updateResume({
-          resumeId: resumeId,
-          updates: {
-            firstName: parsedData.firstName,
-            lastName: parsedData.lastName,
-            jobTitle: parsedData.jobTitle,
-            address: parsedData.address,
-            phone: parsedData.phone,
-            email: parsedData.email,
-            summary: parsedData.summary,
-          },
-        });
-
-        toast({
-          title: "Resume parsed successfully",
-          description:
-            "Your resume information has been extracted and filled in",
-          className: "bg-white",
-        });
-      } else {
-        toast({
-          title: "Parsing failed",
-          description: "Could not extract information from your resume",
-          variant: "destructive",
-        });
+        await addSkillToResume(resumeId, parsedData.skills);
       }
-    } catch (error) {
-      console.error("Error parsing resume:", error);
+
+      if (parsedData.experience && parsedData.experience.length > 0) {
+        handleInputChange({
+          target: {
+            name: "experience",
+            value: parsedData.experience,
+          },
+        });
+        await addExperienceToResume(resumeId, parsedData.experience);
+      }
+
+      if (parsedData.education && parsedData.education.length > 0) {
+        handleInputChange({
+          target: {
+            name: "education",
+            value: parsedData.education,
+          },
+        });
+        await addEducationToResume(resumeId, parsedData.education);
+      }
+
+      await updateResume({
+        resumeId: resumeId,
+        updates: {
+          firstName: parsedData.firstName,
+          lastName: parsedData.lastName,
+          jobTitle: parsedData.jobTitle,
+          address: parsedData.address,
+          phone: parsedData.phone,
+          email: parsedData.email,
+          summary: parsedData.summary,
+        },
+      });
+
+      toast({
+        title: "Resume parsed successfully",
+        description: "Your resume information has been extracted and filled in",
+        className: "bg-white",
+      });
+    } else {
       toast({
         title: "Parsing failed",
-        description:
-          "There was an error extracting information from your resume",
+        description: "Could not extract information from your resume",
         variant: "destructive",
       });
-    } finally {
-      setIsParsing(false);
     }
-  };
+  } catch (error) {
+    console.error("Error parsing resume:", error);
+    toast({
+      title: "Parsing failed",
+      description: "There was an error extracting information from your resume",
+      variant: "destructive",
+    });
+  } finally {
+    setIsParsing(false);
+  }
+};
 
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>,

@@ -6,7 +6,8 @@ import { checkResumeOwnership } from "@/lib/actions/resume.actions";
 import { redirect } from "next/navigation";
 import ResumeEditor from "@/components/layout/my-resume/ResumeEditor";
 
-const EditResume = async ({ params }: { params: { id: string } }) => {
+const EditResume = async (props: any) => {
+  const { params } = props;
   const user = await currentUser();
   const isResumeOwner = await checkResumeOwnership(user?.id || "", params.id);
 

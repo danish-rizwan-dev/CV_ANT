@@ -1,50 +1,37 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import { v4 as uuidv4 } from "uuid";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2, PlusSquare } from "lucide-react";
 
-// Icons from Lucide React
-import { Upload, Plus, PlusSquare, Loader2, FilePlus } from "lucide-react";
-
-// Dialog component from your UI library (Custom or UI Framework)
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
-} from "@/components/ui/dialog";  // Update path to where your dialog components are located
-
-// UI components like Button, Input, etc.
-import { Button } from "../ui/button";  // Button component
-import { Input } from "../ui/input";  // Input component
-
-// Form components from your UI library (Custom or UI Framework)
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { v4 as uuidv4 } from "uuid";
+import React, { useState } from "react";
+import { z } from "zod";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { useForm } from "react-hook-form";
+import { ResumeNameValidationSchema } from "@/lib/validations/resume";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage
-} from "../ui/form";  // Form handling components
-
-// Toast for notifications
-import { toast } from "../ui/use-toast";  // Toast notifications
-
-// Custom actions for interacting with the server-side (such as creating resumes)
-import { createResume } from "@/lib/actions/resume.actions";  // Function for creating a new resume
-
-// Validation schema for resume name validation using Zod
-import { ResumeNameValidationSchema } from "@/lib/validations/resume";  // Zod validation schema for resume name
+  FormMessage,
+} from "../ui/form";
+import { createResume } from "@/lib/actions/resume.actions";
+import { toast } from "../ui/use-toast";
+import { useRouter } from "next-nprogress-bar";
 
 const AddResume = ({ userId }: { userId: string | undefined }) => {
-  const [showOptions, setShowOptions] = useState(false);
+
   const router = useRouter();
   const [openDialog, setOpenDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -92,159 +79,86 @@ const AddResume = ({ userId }: { userId: string | undefined }) => {
     }
   };
 
-  const handleResumeUpload = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.pdf,.docx';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file && userId) {
-        setIsLoading(true);
-
-        try {
-          const uuid = uuidv4();
-          const result = await createResume({
-            resumeId: uuid,
-            userId: userId,
-            title: file.name.split('.')[0],
-          });
-
-          if (result.success) {
-            const resume = JSON.parse(result.data!);
-            router.push(`/my-resume/${resume.resumeId}/edit`);
-          } else {
-            toast({
-              title: "Uh Oh! Something went wrong.",
-              description: result?.error,
-              variant: "destructive",
-              className: "bg-white",
-            });
-          }
-        } catch (error) {
-          console.error("Upload error:", error);
-          toast({
-            title: "Upload failed",
-            description: "There was an error uploading your file",
-            variant: "destructive",
-            className: "bg-white",
-          });
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    };
-    input.click();
-  };
-
   return (
-    <div
-    className="relative p-6 py-12 border border-[#007AFF] flex flex-col justify-center items-center bg-white text-[#007AFF] h-[180px] w-[160px] hover:shadow-lg hover:scale-90 transition-all duration-300 ease-in-out rounded-lg cursor-pointer shadow-lg"
-    onMouseEnter={() => setShowOptions(true)}
-    onMouseLeave={() => setShowOptions(false)}
-  >
-    {!showOptions ? (
-      <div className="flex flex-col items-center gap-2 text-center font-semibold cursor-pointer">
-      <FilePlus size={36} />
-      <div className="flex flex-col items-center leading-tight">
-        <p>Create Resume</p>
-        <p className="text-sm font-normal text-gray-500">or</p>
-        <p>Upload CV</p>
-      </div>
-    </div>
-    ) : (
-      <div className="flex flex-col items-center gap-4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full px-4">
-        <Button
-          onClick={() => setOpenDialog(true)}
-          className="cursor-pointer w-[80%] bg-[#0053CC] text-white px-[16px] py-[10px] hover:bg-blue-900 transition-all rounded-md text-xs font-semibold flex items-center justify-center gap-2"
-        >
-          <Plus size={14} />
-          Create
-        </Button>
-  
-        <Button
-          variant="outline"
-          onClick={handleResumeUpload}
-          className="cursor-pointer w-[80%] border-2 border-[#007AFF] text-[#007AFF] px-[16px] py-[10px] bg-white hover:bg-blue-50 transition-all rounded-md text-xs font-semibold flex items-center justify-center gap-2"
-        >
-          <Upload size={14} />
-          Upload
-        </Button>
-  
-        {/* Dialog for Create New Resume */}
-        <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Resume</DialogTitle>
-              <DialogDescription>
-                Enter the title of your resume here. Click create when you're
-                done.
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="comment-form"
-              >
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        <p className="mt-2 mb-3 text-slate-700 font-semibold">
-                          Resume Title:
-                        </p>
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="text"
-                          placeholder="Example: Android Developer Resume"
-                          className={`no-focus ${
-                            form.formState.errors.name ? "error" : ""
-                          }`}
-                          autoComplete="off"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+    <>
+      <div
+        className="relative aspect-[1/1.2] border border-dashed border-slate-300 flex items-center justify-center bg-slate-100 rounded-xl hover:scale-105 hover:shadow-md transition-all cursor-pointer"
+        onClick={() => userId && setOpenDialog(true)}
+      >
+        <PlusSquare className="text-slate-500" />
+        </div>
+
+<Dialog open={openDialog} onOpenChange={setOpenDialog}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Create New Resume</DialogTitle>
+      <DialogDescription>
+        Enter the title of your resume here. Click create when you're
+        done.
+      </DialogDescription>
+    </DialogHeader>
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="comment-form"
+      >
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                <p className="mt-2 mb-3 text-slate-700 font-semibold">
+                  Resume Title:
+                </p>
+              </FormLabel>
+              <FormControl>
+                <Input
+                  type="text"
+                  placeholder="Example: Android Developer Resume"
+                  className={`no-focus ${
+                    form.formState.errors.name ? "error" : ""
+                  }`}
+                  autoComplete="off"
+                  {...field}
                 />
-  
-                <div className="mt-10 flex justify-end gap-5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOpenDialog(false);
-                      form.reset({ name: "" });
-                    }}
-                    className="btn-ghost"
-                    disabled={isLoading}
-                  >
-                    Cancel
-                  </button>
-                  <Button
-                    type="submit"
-                    disabled={isLoading || !form.formState.isValid}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 size={20} className="animate-spin" /> &nbsp;
-                        Creating
-                      </>
-                    ) : (
-                      "Create"
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      </div>
-    )}
-  </div>
-  
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="mt-10 flex justify-end gap-5">
+          <button
+            type="button"
+            onClick={() => {
+              setOpenDialog(false);
+              form.reset({ name: "" });
+            }}
+            className="btn-ghost"
+            disabled={isLoading}
+          >
+            Cancel
+          </button>
+          <Button
+            type="submit"
+            disabled={isLoading || !form.formState.isValid}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 size={20} className="animate-spin" /> &nbsp;
+                Creating
+              </>
+            ) : (
+              "Create"
+            )}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  </DialogContent>
+</Dialog>
+</>
   );
 };
 
